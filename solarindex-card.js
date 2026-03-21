@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.10";
+const CARD_VERSION = "1.0.11";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -88,28 +88,73 @@ class SolarIndexCard extends HTMLElement {
     return this._hass.states[entityId];
   }
 
+  // Auto-discover SolarIndex entities when not manually configured
+  _discoverPrefixes() {
+    if (!this._hass) return null;
+    for (const [id, state] of Object.entries(this._hass.states)) {
+      if (id.endsWith("_today") && state.attributes?.date) {
+        const forecastPrefix = id.slice(0, -6);
+        const metaPrefix = forecastPrefix.replace(/_forecast$/, "");
+        return { forecast: forecastPrefix, meta: metaPrefix };
+      }
+    }
+    return null;
+  }
+
   _render() {
     if (!this._hass) return;
 
     const cfg = this._config;
 
-    // Check if required sensors are configured
-    if (!cfg.entity_today) {
-      this.shadowRoot.innerHTML = `
-        <style>:host{display:block;}.card{background:var(--card-background-color);border-radius:16px;padding:24px;font-family:sans-serif;color:var(--primary-text-color);text-align:center;opacity:0.7;}</style>
-        <div class="card">
-          <div style="text-align:right;font-size:10px;opacity:0.3;margin-bottom:8px;">v${CARD_VERSION}</div>
-          <div style="font-size:40px;margin-bottom:12px;">☀️</div>
-          <div style="font-weight:600;margin-bottom:6px;">SolarIndex</div>
-          <div style="font-size:13px;opacity:0.6;">Bitte Karte konfigurieren:<br>Stift-Icon → Sensoren eintragen</div>
-        </div>`;
-      return;
+    // Resolve entity IDs: use manual config if set, else auto-discover
+    let entityToday, entityTomorrow, entityDay3, entityDay4,
+        entityDay5, entityDay6, entityDay7, entityDay8,
+        entityAccuracy, entityTraining, entityCondition;
+
+    if (cfg.entity_today) {
+      // Manual configuration
+      entityToday    = cfg.entity_today;
+      entityTomorrow = cfg.entity_tomorrow;
+      entityDay3     = cfg.entity_day3;
+      entityDay4     = cfg.entity_day4;
+      entityDay5     = cfg.entity_day5;
+      entityDay6     = cfg.entity_day6;
+      entityDay7     = cfg.entity_day7;
+      entityDay8     = cfg.entity_day8;
+      entityAccuracy = cfg.entity_accuracy;
+      entityTraining = cfg.entity_training;
+      entityCondition = cfg.entity_condition;
+    } else {
+      // Auto-discovery
+      const p = this._discoverPrefixes();
+      if (!p) {
+        this.shadowRoot.innerHTML = `
+          <style>:host{display:block;}.card{background:var(--card-background-color);border-radius:16px;padding:24px;font-family:sans-serif;color:var(--primary-text-color);text-align:center;opacity:0.7;}</style>
+          <div class="card">
+            <div style="text-align:right;font-size:10px;opacity:0.3;margin-bottom:8px;">v${CARD_VERSION}</div>
+            <div style="font-size:40px;margin-bottom:12px;">☀️</div>
+            <div style="font-weight:600;margin-bottom:6px;">SolarIndex</div>
+            <div style="font-size:13px;opacity:0.6;">Warte auf Daten…<br>Integration einrichten oder Sensoren manuell konfigurieren.</div>
+          </div>`;
+        return;
+      }
+      entityToday    = `${p.forecast}_today`;
+      entityTomorrow = `${p.forecast}_tomorrow`;
+      entityDay3     = `${p.forecast}_day_3`;
+      entityDay4     = `${p.forecast}_day_4`;
+      entityDay5     = `${p.forecast}_day_5`;
+      entityDay6     = `${p.forecast}_day_6`;
+      entityDay7     = `${p.forecast}_day_7`;
+      entityDay8     = `${p.forecast}_day_8`;
+      entityAccuracy = `${p.meta}_model_accuracy`;
+      entityTraining = `${p.meta}_training_count`;
+      entityCondition = `${p.meta}_today_condition`;
     }
 
     const DAY_ENTITY_KEYS = [
-      cfg.entity_today, cfg.entity_tomorrow,
-      cfg.entity_day3, cfg.entity_day4, cfg.entity_day5,
-      cfg.entity_day6, cfg.entity_day7, cfg.entity_day8,
+      entityToday, entityTomorrow,
+      entityDay3, entityDay4, entityDay5,
+      entityDay6, entityDay7, entityDay8,
     ];
 
     const forecasts = DAY_ENTITY_KEYS.map((entityId, i) => {
@@ -129,9 +174,9 @@ class SolarIndexCard extends HTMLElement {
       };
     }).filter(Boolean);
 
-    const accuracyState = this._s(cfg.entity_accuracy);
-    const countState = this._s(cfg.entity_training);
-    const conditionState = this._s(cfg.entity_condition);
+    const accuracyState  = this._s(entityAccuracy);
+    const countState     = this._s(entityTraining);
+    const conditionState = this._s(entityCondition);
 
     const accuracy = accuracyState ? parseFloat(accuracyState.state) || 0 : 0;
     const trainingCount = countState ? parseInt(countState.state) || 0 : 0;
