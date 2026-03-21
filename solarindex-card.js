@@ -477,10 +477,12 @@ class SolarIndexCardEditor extends HTMLElement {
           </div>`).join("")}
       </div>`;
 
-    // Attach change listeners to all inputs
+    // Attach listeners to all inputs
     FIELDS.forEach(({ id }) => {
       const el = this.shadowRoot.getElementById(id);
       if (el) {
+        // Prevent HA dialog from stealing focus on click
+        el.addEventListener("mousedown", (e) => e.stopPropagation());
         el.addEventListener("change", (e) => {
           this._fire({ ...cfg, [id]: e.target.value.trim() || undefined });
         });
