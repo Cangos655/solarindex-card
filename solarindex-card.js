@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.7";
+const CARD_VERSION = "1.0.8";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -97,6 +97,7 @@ class SolarIndexCard extends HTMLElement {
       this.shadowRoot.innerHTML = `
         <style>:host{display:block;}.card{background:var(--card-background-color);border-radius:16px;padding:24px;font-family:sans-serif;color:var(--primary-text-color);text-align:center;opacity:0.7;}</style>
         <div class="card">
+          <div style="text-align:right;font-size:10px;opacity:0.3;margin-bottom:8px;">v${CARD_VERSION}</div>
           <div style="font-size:40px;margin-bottom:12px;">☀️</div>
           <div style="font-weight:600;margin-bottom:6px;">SolarIndex</div>
           <div style="font-size:13px;opacity:0.6;">Bitte Karte konfigurieren:<br>Stift-Icon → Sensoren eintragen</div>
