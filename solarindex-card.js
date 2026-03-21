@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.16";
+const CARD_VERSION = "1.0.17";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -98,17 +98,49 @@ class SolarIndexCard extends HTMLElement {
     return this._hass.states[entityId];
   }
 
-  // Auto-discover SolarIndex entities when not manually configured
-  _discoverPrefixes() {
+  // Auto-discover SolarIndex entities by suffix
+  _discoverEntities() {
     if (!this._hass) return null;
-    for (const [id, state] of Object.entries(this._hass.states)) {
-      if (id.endsWith("_today") && state.attributes?.date) {
-        const forecastPrefix = id.slice(0, -6);
-        const metaPrefix = forecastPrefix.replace(/_forecast$/, "");
-        return { forecast: forecastPrefix, meta: metaPrefix };
+    const states = this._hass.states;
+    const d = {};
+    const suffixes = {
+      today: "_today", tomorrow: "_tomorrow",
+      day3: "_day_3", day4: "_day_4", day5: "_day_5",
+      day6: "_day_6", day7: "_day_7", day8: "_day_8",
+      accuracy: "_model_accuracy",
+      training: "_training_count",
+      condition: "_today_condition",
+    };
+    // Find the "today" forecast sensor first (must have date attribute)
+    for (const [id, state] of Object.entries(states)) {
+      if (id.startsWith("sensor.") && id.endsWith("_today") && state.attributes?.date) {
+        d.today = id;
+        break;
       }
     }
-    return null;
+    if (!d.today) return null;
+    // Derive prefix from today sensor for forecast entities
+    const forecastPrefix = d.today.slice(0, -6);
+    // Find each entity: first try prefix-based, then fallback to suffix scan
+    for (const [key, suffix] of Object.entries(suffixes)) {
+      if (key === "today") continue;
+      // Try constructing from prefix
+      const metaPrefix = forecastPrefix.replace(/_forecast$/, "");
+      const isMeta = ["accuracy", "training", "condition"].includes(key);
+      const candidate = (isMeta ? metaPrefix : forecastPrefix) + suffix;
+      if (states[candidate]) {
+        d[key] = candidate;
+      } else {
+        // Fallback: scan all sensors for matching suffix
+        for (const id of Object.keys(states)) {
+          if (id.startsWith("sensor.") && id.endsWith(suffix)) {
+            d[key] = id;
+            break;
+          }
+        }
+      }
+    }
+    return d;
   }
 
   _render() {
@@ -117,8 +149,8 @@ class SolarIndexCard extends HTMLElement {
     const cfg = this._config;
 
     // Auto-discover defaults, then let manual config override per field
-    const p = this._discoverPrefixes();
-    if (!p && !cfg.entity_today) {
+    const d = this._discoverEntities();
+    if (!d && !cfg.entity_today) {
       this.shadowRoot.innerHTML = `
         <style>:host{display:block;}.card{background:var(--card-background-color);border-radius:16px;padding:24px;font-family:sans-serif;color:var(--primary-text-color);text-align:center;opacity:0.7;}</style>
         <div class="card">
@@ -129,17 +161,17 @@ class SolarIndexCard extends HTMLElement {
         </div>`;
       return;
     }
-    const entityToday    = cfg.entity_today     || (p && `${p.forecast}_today`);
-    const entityTomorrow = cfg.entity_tomorrow  || (p && `${p.forecast}_tomorrow`);
-    const entityDay3     = cfg.entity_day3      || (p && `${p.forecast}_day_3`);
-    const entityDay4     = cfg.entity_day4      || (p && `${p.forecast}_day_4`);
-    const entityDay5     = cfg.entity_day5      || (p && `${p.forecast}_day_5`);
-    const entityDay6     = cfg.entity_day6      || (p && `${p.forecast}_day_6`);
-    const entityDay7     = cfg.entity_day7      || (p && `${p.forecast}_day_7`);
-    const entityDay8     = cfg.entity_day8      || (p && `${p.forecast}_day_8`);
-    const entityAccuracy = cfg.entity_accuracy  || (p && `${p.meta}_model_accuracy`);
-    const entityTraining = cfg.entity_training  || (p && `${p.meta}_training_count`);
-    const entityCondition = cfg.entity_condition || (p && `${p.meta}_today_condition`);
+    const entityToday     = cfg.entity_today     || (d && d.today);
+    const entityTomorrow  = cfg.entity_tomorrow  || (d && d.tomorrow);
+    const entityDay3      = cfg.entity_day3      || (d && d.day3);
+    const entityDay4      = cfg.entity_day4      || (d && d.day4);
+    const entityDay5      = cfg.entity_day5      || (d && d.day5);
+    const entityDay6      = cfg.entity_day6      || (d && d.day6);
+    const entityDay7      = cfg.entity_day7      || (d && d.day7);
+    const entityDay8      = cfg.entity_day8      || (d && d.day8);
+    const entityAccuracy  = cfg.entity_accuracy  || (d && d.accuracy);
+    const entityTraining  = cfg.entity_training  || (d && d.training);
+    const entityCondition = cfg.entity_condition || (d && d.condition);
 
     const DAY_ENTITY_KEYS = [
       entityToday, entityTomorrow,
