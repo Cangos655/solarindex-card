@@ -8,6 +8,8 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
+const CARD_VERSION = "1.0.7";
+
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
   45: "🌫", 48: "🌫",
@@ -316,7 +318,10 @@ class SolarIndexCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>${styles}</style>
       <div class="card">
-        <div class="card-title">${this._config.title}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div class="card-title" style="margin-bottom:0;">${this._config.title}</div>
+          <div style="font-size:10px;opacity:0.3;">v${CARD_VERSION}</div>
+        </div>
 
         <!-- Today -->
         <div class="today-section">
