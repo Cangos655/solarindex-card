@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.18";
+const CARD_VERSION = "1.0.19";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -205,6 +205,11 @@ class SolarIndexCard extends HTMLElement {
 
     const accuracy = accuracyState ? parseFloat(accuracyState.state) || 0 : 0;
     const trainingCount = countState ? parseInt(countState.state) || 0 : 0;
+    const countAttrs = countState ? countState.attributes || {} : {};
+    const bucketSunny = countAttrs.sunny ?? "—";
+    const bucketMixed = countAttrs.mixed ?? "—";
+    const bucketOvercast = countAttrs.overcast ?? "—";
+    const maxPerBucket = countAttrs.max_per_bucket ?? 10;
     // Fall back to today's forecast condition attribute if sensor not found
     const todayCondition = conditionState
       ? conditionState.state
@@ -311,25 +316,25 @@ class SolarIndexCard extends HTMLElement {
         background: rgba(255,255,255,0.04);
         border-radius: 10px;
       }
-      .training-header {
-        display: flex;
-        justify-content: space-between;
+      .training-title {
         font-size: 12px;
-        margin-bottom: 8px;
         opacity: 0.7;
+        margin-bottom: 10px;
       }
-      .progress-bar-bg {
-        height: 6px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 3px;
-        overflow: hidden;
+      .training-buckets {
+        display: flex;
+        gap: 8px;
       }
-      .progress-bar-fill {
-        height: 100%;
-        border-radius: 3px;
-        transition: width 0.5s ease;
-        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      .training-bucket {
+        flex: 1;
+        text-align: center;
+        padding: 8px 4px;
+        background: rgba(255,255,255,0.04);
+        border-radius: 8px;
       }
+      .bucket-icon { font-size: 16px; margin-bottom: 4px; }
+      .bucket-label { font-size: 10px; opacity: 0.5; margin-bottom: 2px; }
+      .bucket-count { font-size: 14px; font-weight: 700; }
     `;
 
     const conditionColor = CONDITION_COLORS[todayCondition] || "#6366f1";
@@ -378,12 +383,23 @@ class SolarIndexCard extends HTMLElement {
 
         <!-- Training progress -->
         <div class="training-section">
-          <div class="training-header">
-            <span>🧠 Modell-Training</span>
-            <span>${trainingCount} / 30 Einträge · ${accuracy.toFixed(0)}%</span>
-          </div>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" style="width:${accuracy}%;"></div>
+          <div class="training-title">🧠 Modell-Training · ${trainingCount}/30 Einträge · ${accuracy.toFixed(0)}%</div>
+          <div class="training-buckets">
+            <div class="training-bucket">
+              <div class="bucket-icon">☀️</div>
+              <div class="bucket-label">Sonnig</div>
+              <div class="bucket-count" style="color:#f59e0b;">${bucketSunny}/${maxPerBucket}</div>
+            </div>
+            <div class="training-bucket">
+              <div class="bucket-icon">⛅</div>
+              <div class="bucket-label">Wechselhaft</div>
+              <div class="bucket-count" style="color:#6366f1;">${bucketMixed}/${maxPerBucket}</div>
+            </div>
+            <div class="training-bucket">
+              <div class="bucket-icon">☁️</div>
+              <div class="bucket-label">Bewölkt</div>
+              <div class="bucket-count" style="color:#64748b;">${bucketOvercast}/${maxPerBucket}</div>
+            </div>
           </div>
         </div>
       </div>
