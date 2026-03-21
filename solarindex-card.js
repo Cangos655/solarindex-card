@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.9";
+const CARD_VERSION = "1.0.10";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -75,6 +75,7 @@ class SolarIndexCard extends HTMLElement {
 
   setConfig(config) {
     this._config = { title: "Solar Forecast", ...config };
+    if (this._hass) this._render();
   }
 
   set hass(hass) {
