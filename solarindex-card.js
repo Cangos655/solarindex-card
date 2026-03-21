@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.11";
+const CARD_VERSION = "1.0.12";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -106,50 +106,30 @@ class SolarIndexCard extends HTMLElement {
 
     const cfg = this._config;
 
-    // Resolve entity IDs: use manual config if set, else auto-discover
-    let entityToday, entityTomorrow, entityDay3, entityDay4,
-        entityDay5, entityDay6, entityDay7, entityDay8,
-        entityAccuracy, entityTraining, entityCondition;
-
-    if (cfg.entity_today) {
-      // Manual configuration
-      entityToday    = cfg.entity_today;
-      entityTomorrow = cfg.entity_tomorrow;
-      entityDay3     = cfg.entity_day3;
-      entityDay4     = cfg.entity_day4;
-      entityDay5     = cfg.entity_day5;
-      entityDay6     = cfg.entity_day6;
-      entityDay7     = cfg.entity_day7;
-      entityDay8     = cfg.entity_day8;
-      entityAccuracy = cfg.entity_accuracy;
-      entityTraining = cfg.entity_training;
-      entityCondition = cfg.entity_condition;
-    } else {
-      // Auto-discovery
-      const p = this._discoverPrefixes();
-      if (!p) {
-        this.shadowRoot.innerHTML = `
-          <style>:host{display:block;}.card{background:var(--card-background-color);border-radius:16px;padding:24px;font-family:sans-serif;color:var(--primary-text-color);text-align:center;opacity:0.7;}</style>
-          <div class="card">
-            <div style="text-align:right;font-size:10px;opacity:0.3;margin-bottom:8px;">v${CARD_VERSION}</div>
-            <div style="font-size:40px;margin-bottom:12px;">☀️</div>
-            <div style="font-weight:600;margin-bottom:6px;">SolarIndex</div>
-            <div style="font-size:13px;opacity:0.6;">Warte auf Daten…<br>Integration einrichten oder Sensoren manuell konfigurieren.</div>
-          </div>`;
-        return;
-      }
-      entityToday    = `${p.forecast}_today`;
-      entityTomorrow = `${p.forecast}_tomorrow`;
-      entityDay3     = `${p.forecast}_day_3`;
-      entityDay4     = `${p.forecast}_day_4`;
-      entityDay5     = `${p.forecast}_day_5`;
-      entityDay6     = `${p.forecast}_day_6`;
-      entityDay7     = `${p.forecast}_day_7`;
-      entityDay8     = `${p.forecast}_day_8`;
-      entityAccuracy = `${p.meta}_model_accuracy`;
-      entityTraining = `${p.meta}_training_count`;
-      entityCondition = `${p.meta}_today_condition`;
+    // Auto-discover defaults, then let manual config override per field
+    const p = this._discoverPrefixes();
+    if (!p && !cfg.entity_today) {
+      this.shadowRoot.innerHTML = `
+        <style>:host{display:block;}.card{background:var(--card-background-color);border-radius:16px;padding:24px;font-family:sans-serif;color:var(--primary-text-color);text-align:center;opacity:0.7;}</style>
+        <div class="card">
+          <div style="text-align:right;font-size:10px;opacity:0.3;margin-bottom:8px;">v${CARD_VERSION}</div>
+          <div style="font-size:40px;margin-bottom:12px;">☀️</div>
+          <div style="font-weight:600;margin-bottom:6px;">SolarIndex</div>
+          <div style="font-size:13px;opacity:0.6;">Warte auf Daten…<br>Integration einrichten oder Sensoren manuell konfigurieren.</div>
+        </div>`;
+      return;
     }
+    const entityToday    = cfg.entity_today     || (p && `${p.forecast}_today`);
+    const entityTomorrow = cfg.entity_tomorrow  || (p && `${p.forecast}_tomorrow`);
+    const entityDay3     = cfg.entity_day3      || (p && `${p.forecast}_day_3`);
+    const entityDay4     = cfg.entity_day4      || (p && `${p.forecast}_day_4`);
+    const entityDay5     = cfg.entity_day5      || (p && `${p.forecast}_day_5`);
+    const entityDay6     = cfg.entity_day6      || (p && `${p.forecast}_day_6`);
+    const entityDay7     = cfg.entity_day7      || (p && `${p.forecast}_day_7`);
+    const entityDay8     = cfg.entity_day8      || (p && `${p.forecast}_day_8`);
+    const entityAccuracy = cfg.entity_accuracy  || (p && `${p.meta}_model_accuracy`);
+    const entityTraining = cfg.entity_training  || (p && `${p.meta}_training_count`);
+    const entityCondition = cfg.entity_condition || (p && `${p.meta}_today_condition`);
 
     const DAY_ENTITY_KEYS = [
       entityToday, entityTomorrow,
