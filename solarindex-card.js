@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.12";
+const CARD_VERSION = "1.0.13";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -408,17 +408,17 @@ customElements.define("solarindex-card", SolarIndexCard);
 
 const EDITOR_SCHEMA = [
   { name: "title",            label: "Titel",                         selector: { text: {} } },
-  { name: "entity_today",     label: "☀️ Sensor: Heute",              selector: { entity: { domain: "sensor" } } },
-  { name: "entity_tomorrow",  label: "☀️ Sensor: Morgen",             selector: { entity: { domain: "sensor" } } },
-  { name: "entity_day3",      label: "☀️ Sensor: Tag 3",              selector: { entity: { domain: "sensor" } } },
-  { name: "entity_day4",      label: "☀️ Sensor: Tag 4",              selector: { entity: { domain: "sensor" } } },
-  { name: "entity_day5",      label: "☀️ Sensor: Tag 5",              selector: { entity: { domain: "sensor" } } },
-  { name: "entity_day6",      label: "☀️ Sensor: Tag 6",              selector: { entity: { domain: "sensor" } } },
-  { name: "entity_day7",      label: "☀️ Sensor: Tag 7",              selector: { entity: { domain: "sensor" } } },
-  { name: "entity_day8",      label: "☀️ Sensor: Tag 8",              selector: { entity: { domain: "sensor" } } },
-  { name: "entity_accuracy",  label: "🧠 Sensor: Modell-Genauigkeit", selector: { entity: { domain: "sensor" } } },
-  { name: "entity_training",  label: "🧠 Sensor: Trainings-Einträge", selector: { entity: { domain: "sensor" } } },
-  { name: "entity_condition", label: "⛅ Sensor: Wetterbedingung",    selector: { entity: { domain: "sensor" } } },
+  { name: "entity_today",     label: "☀️ Sensor: Heute",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_tomorrow",  label: "☀️ Sensor: Morgen",             selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day3",      label: "☀️ Sensor: Tag 3",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day4",      label: "☀️ Sensor: Tag 4",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day5",      label: "☀️ Sensor: Tag 5",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day6",      label: "☀️ Sensor: Tag 6",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day7",      label: "☀️ Sensor: Tag 7",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day8",      label: "☀️ Sensor: Tag 8",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_accuracy",  label: "🧠 Sensor: Modell-Genauigkeit", selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_training",  label: "🧠 Sensor: Trainings-Einträge", selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_condition", label: "⛅ Sensor: Wetterbedingung",    selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
 ];
 
 class SolarIndexCardEditor extends HTMLElement {
