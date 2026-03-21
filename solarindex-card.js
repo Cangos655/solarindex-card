@@ -410,6 +410,82 @@ class SolarIndexCard extends HTMLElement {
 
 customElements.define("solarindex-card", SolarIndexCard);
 
+// ---------------------------------------------------------------------------
+// Card Editor (GUI configuration)
+// ---------------------------------------------------------------------------
+
+class SolarIndexCardEditor extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (!this._rendered) this._render();
+  }
+
+  setConfig(config) {
+    this._config = config;
+    if (this.shadowRoot) this._render();
+  }
+
+  _fire(config) {
+    this.dispatchEvent(new CustomEvent("config-changed", {
+      detail: { config },
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
+  _render() {
+    this._rendered = true;
+    const cfg = this._config || {};
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        .editor { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+        label { font-size: 13px; font-weight: 500; color: var(--secondary-text-color); display: block; margin-bottom: 4px; }
+        input {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 8px 12px;
+          border: 1px solid var(--divider-color, #ccc);
+          border-radius: 8px;
+          background: var(--card-background-color);
+          color: var(--primary-text-color);
+          font-size: 14px;
+        }
+        input:focus { outline: none; border-color: var(--primary-color); }
+        .hint { font-size: 11px; color: var(--secondary-text-color); margin-top: 4px; opacity: 0.7; }
+      </style>
+      <div class="editor">
+        <div>
+          <label>Titel</label>
+          <input id="title" type="text" value="${cfg.title || "Solar Forecast"}" placeholder="Solar Forecast" />
+        </div>
+        <div>
+          <label>Entity Prefix <span style="opacity:0.5;font-weight:400;">(optional)</span></label>
+          <input id="entity_prefix" type="text" value="${cfg.entity_prefix || ""}" placeholder="Automatisch erkannt" />
+          <div class="hint">Nur nötig wenn die automatische Erkennung fehlschlägt. z.B. sensor.solarindex</div>
+        </div>
+      </div>`;
+
+    this.shadowRoot.getElementById("title").addEventListener("change", (e) => {
+      this._fire({ ...cfg, title: e.target.value });
+    });
+    this.shadowRoot.getElementById("entity_prefix").addEventListener("change", (e) => {
+      const val = e.target.value.trim();
+      const updated = { ...cfg };
+      if (val) updated.entity_prefix = val;
+      else delete updated.entity_prefix;
+      this._fire(updated);
+    });
+  }
+}
+
+customElements.define("solarindex-card-editor", SolarIndexCardEditor);
+
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "solarindex-card",
