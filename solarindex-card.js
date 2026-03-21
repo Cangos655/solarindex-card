@@ -102,12 +102,16 @@ class SolarIndexCard extends HTMLElement {
   }
 
   _getState(suffix) {
-    if (!this._prefixes) return undefined;
-    const metaSuffixes = ["model_accuracy", "training_count", "today_condition"];
-    const prefix = metaSuffixes.includes(suffix)
-      ? this._prefixes.meta
-      : this._prefixes.forecast;
-    return this._hass?.states[`${prefix}_${suffix}`];
+    if (!this._prefixes || !this._hass) return undefined;
+    const metaSuffixes = ["model_accuracy", "training_count", "training_entries", "today_condition"];
+    const prefixesToTry = metaSuffixes.includes(suffix)
+      ? [this._prefixes.meta, this._prefixes.forecast]
+      : [this._prefixes.forecast];
+    for (const prefix of prefixesToTry) {
+      const state = this._hass.states[`${prefix}_${suffix}`];
+      if (state) return state;
+    }
+    return undefined;
   }
 
   _render() {
@@ -162,12 +166,15 @@ class SolarIndexCard extends HTMLElement {
     }).filter(Boolean);
 
     const accuracyState = this._getState("model_accuracy");
-    const countState = this._getState("training_count");
+    const countState = this._getState("training_count") || this._getState("training_entries");
     const conditionState = this._getState("today_condition");
 
-    const accuracy = accuracyState ? parseFloat(accuracyState.state) : 0;
-    const trainingCount = countState ? parseInt(countState.state) : 0;
-    const todayCondition = conditionState ? conditionState.state : "mixed";
+    const accuracy = accuracyState ? parseFloat(accuracyState.state) || 0 : 0;
+    const trainingCount = countState ? parseInt(countState.state) || 0 : 0;
+    // Fall back to today's forecast condition attribute if sensor not found
+    const todayCondition = conditionState
+      ? conditionState.state
+      : (forecasts[0]?.condition || "mixed");
     const today = forecasts[0] || {};
 
     // Chart data
