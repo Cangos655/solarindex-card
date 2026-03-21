@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.17";
+const CARD_VERSION = "1.0.18";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -68,6 +68,50 @@ function shortWeekday(dateStr) {
   }
 }
 
+// Shared auto-discovery function (used by card + editor)
+function discoverSolarIndexEntities(hass) {
+  if (!hass) return null;
+  const states = hass.states;
+  const d = {};
+  const suffixes = {
+    entity_today: ["_today"], entity_tomorrow: ["_tomorrow"],
+    entity_day3: ["_day_3"], entity_day4: ["_day_4"], entity_day5: ["_day_5"],
+    entity_day6: ["_day_6"], entity_day7: ["_day_7"], entity_day8: ["_day_8"],
+    entity_accuracy: ["_model_accuracy"],
+    entity_training: ["_training_count", "_training_entries"],
+    entity_condition: ["_today_condition"],
+  };
+  // Find "today" sensor
+  for (const [id, state] of Object.entries(states)) {
+    if (id.startsWith("sensor.") && id.endsWith("_today") && state.attributes?.date) {
+      d.entity_today = id; break;
+    }
+  }
+  if (!d.entity_today) return null;
+  const forecastPrefix = d.entity_today.slice(0, -6);
+  const metaPrefix = forecastPrefix.replace(/_forecast$/, "");
+  for (const [key, suffixList] of Object.entries(suffixes)) {
+    if (key === "entity_today") continue;
+    const isMeta = ["entity_accuracy", "entity_training", "entity_condition"].includes(key);
+    const prefix = isMeta ? metaPrefix : forecastPrefix;
+    let found = false;
+    for (const suffix of suffixList) {
+      const candidate = prefix + suffix;
+      if (states[candidate]) { d[key] = candidate; found = true; break; }
+    }
+    if (found) continue;
+    for (const suffix of suffixList) {
+      for (const id of Object.keys(states)) {
+        if (id.startsWith("sensor.") && id.endsWith(suffix)) {
+          d[key] = id; found = true; break;
+        }
+      }
+      if (found) break;
+    }
+  }
+  return d;
+}
+
 class SolarIndexCard extends HTMLElement {
   constructor() {
     super();
@@ -98,49 +142,8 @@ class SolarIndexCard extends HTMLElement {
     return this._hass.states[entityId];
   }
 
-  // Auto-discover SolarIndex entities by suffix
   _discoverEntities() {
-    if (!this._hass) return null;
-    const states = this._hass.states;
-    const d = {};
-    const suffixes = {
-      today: "_today", tomorrow: "_tomorrow",
-      day3: "_day_3", day4: "_day_4", day5: "_day_5",
-      day6: "_day_6", day7: "_day_7", day8: "_day_8",
-      accuracy: "_model_accuracy",
-      training: "_training_count",
-      condition: "_today_condition",
-    };
-    // Find the "today" forecast sensor first (must have date attribute)
-    for (const [id, state] of Object.entries(states)) {
-      if (id.startsWith("sensor.") && id.endsWith("_today") && state.attributes?.date) {
-        d.today = id;
-        break;
-      }
-    }
-    if (!d.today) return null;
-    // Derive prefix from today sensor for forecast entities
-    const forecastPrefix = d.today.slice(0, -6);
-    // Find each entity: first try prefix-based, then fallback to suffix scan
-    for (const [key, suffix] of Object.entries(suffixes)) {
-      if (key === "today") continue;
-      // Try constructing from prefix
-      const metaPrefix = forecastPrefix.replace(/_forecast$/, "");
-      const isMeta = ["accuracy", "training", "condition"].includes(key);
-      const candidate = (isMeta ? metaPrefix : forecastPrefix) + suffix;
-      if (states[candidate]) {
-        d[key] = candidate;
-      } else {
-        // Fallback: scan all sensors for matching suffix
-        for (const id of Object.keys(states)) {
-          if (id.startsWith("sensor.") && id.endsWith(suffix)) {
-            d[key] = id;
-            break;
-          }
-        }
-      }
-    }
-    return d;
+    return discoverSolarIndexEntities(this._hass);
   }
 
   _render() {
@@ -149,8 +152,8 @@ class SolarIndexCard extends HTMLElement {
     const cfg = this._config;
 
     // Auto-discover defaults, then let manual config override per field
-    const d = this._discoverEntities();
-    if (!d && !cfg.entity_today) {
+    const disc = this._discoverEntities();
+    if (!disc && !cfg.entity_today) {
       this.shadowRoot.innerHTML = `
         <style>:host{display:block;}.card{background:var(--card-background-color);border-radius:16px;padding:24px;font-family:sans-serif;color:var(--primary-text-color);text-align:center;opacity:0.7;}</style>
         <div class="card">
@@ -161,17 +164,17 @@ class SolarIndexCard extends HTMLElement {
         </div>`;
       return;
     }
-    const entityToday     = cfg.entity_today     || (d && d.today);
-    const entityTomorrow  = cfg.entity_tomorrow  || (d && d.tomorrow);
-    const entityDay3      = cfg.entity_day3      || (d && d.day3);
-    const entityDay4      = cfg.entity_day4      || (d && d.day4);
-    const entityDay5      = cfg.entity_day5      || (d && d.day5);
-    const entityDay6      = cfg.entity_day6      || (d && d.day6);
-    const entityDay7      = cfg.entity_day7      || (d && d.day7);
-    const entityDay8      = cfg.entity_day8      || (d && d.day8);
-    const entityAccuracy  = cfg.entity_accuracy  || (d && d.accuracy);
-    const entityTraining  = cfg.entity_training  || (d && d.training);
-    const entityCondition = cfg.entity_condition || (d && d.condition);
+    const entityToday     = cfg.entity_today     || (disc && disc.entity_today);
+    const entityTomorrow  = cfg.entity_tomorrow  || (disc && disc.entity_tomorrow);
+    const entityDay3      = cfg.entity_day3      || (disc && disc.entity_day3);
+    const entityDay4      = cfg.entity_day4      || (disc && disc.entity_day4);
+    const entityDay5      = cfg.entity_day5      || (disc && disc.entity_day5);
+    const entityDay6      = cfg.entity_day6      || (disc && disc.entity_day6);
+    const entityDay7      = cfg.entity_day7      || (disc && disc.entity_day7);
+    const entityDay8      = cfg.entity_day8      || (disc && disc.entity_day8);
+    const entityAccuracy  = cfg.entity_accuracy  || (disc && disc.entity_accuracy);
+    const entityTraining  = cfg.entity_training  || (disc && disc.entity_training);
+    const entityCondition = cfg.entity_condition || (disc && disc.entity_condition);
 
     const DAY_ENTITY_KEYS = [
       entityToday, entityTomorrow,
@@ -425,6 +428,20 @@ class SolarIndexCardEditor extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     if (this._form) this._form.hass = hass;
+    // Auto-fill entities on first hass set if config is empty
+    if (hass && !this._autoFilled && !this._config.entity_today) {
+      this._autoFilled = true;
+      const disc = discoverSolarIndexEntities(hass);
+      if (disc) {
+        this._config = { ...this._config, ...disc };
+        if (this._form) this._form.data = this._config;
+        this.dispatchEvent(new CustomEvent("config-changed", {
+          detail: { config: this._config },
+          bubbles: true,
+          composed: true,
+        }));
+      }
+    }
   }
 
   setConfig(config) {
