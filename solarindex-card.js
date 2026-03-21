@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.13";
+const CARD_VERSION = "1.0.14";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -115,7 +115,7 @@ class SolarIndexCard extends HTMLElement {
           <div style="text-align:right;font-size:10px;opacity:0.3;margin-bottom:8px;">v${CARD_VERSION}</div>
           <div style="font-size:40px;margin-bottom:12px;">☀️</div>
           <div style="font-weight:600;margin-bottom:6px;">SolarIndex</div>
-          <div style="font-size:13px;opacity:0.6;">Warte auf Daten…<br>Integration einrichten oder Sensoren manuell konfigurieren.</div>
+          <div style="font-size:13px;opacity:0.6;">Waiting for data…<br>Set up the integration or configure sensors manually.</div>
         </div>`;
       return;
     }
@@ -165,9 +165,6 @@ class SolarIndexCard extends HTMLElement {
       ? conditionState.state
       : (forecasts[0]?.condition || "mixed");
     const today = forecasts[0] || {};
-
-    // Chart data
-    const maxKwh = Math.max(...forecasts.map(f => f.kwh), 1);
 
     const styles = `
       :host { display: block; }
@@ -258,41 +255,6 @@ class SolarIndexCard extends HTMLElement {
         font-size: 13px;
       }
 
-      /* Chart */
-      .chart-section { margin-bottom: 20px; }
-      .chart-title {
-        font-size: 11px;
-        opacity: 0.4;
-        margin-bottom: 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-      .chart {
-        display: flex;
-        align-items: flex-end;
-        gap: 4px;
-        height: 60px;
-      }
-      .chart-bar-wrap {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        height: 100%;
-        justify-content: flex-end;
-      }
-      .chart-bar {
-        width: 100%;
-        border-radius: 4px 4px 0 0;
-        min-height: 3px;
-        transition: height 0.3s;
-      }
-      .chart-bar-label {
-        font-size: 9px;
-        opacity: 0.4;
-        margin-top: 3px;
-      }
-
       /* Training progress */
       .training-section {
         padding: 12px;
@@ -331,17 +293,6 @@ class SolarIndexCard extends HTMLElement {
       </div>
     `).join("");
 
-    const chartBarsHtml = forecasts.map((f, i) => {
-      const heightPct = maxKwh > 0 ? Math.max(5, (f.kwh / maxKwh) * 100) : 5;
-      const color = i === 0 ? conditionColor : "rgba(255,255,255,0.2)";
-      return `
-        <div class="chart-bar-wrap">
-          <div class="chart-bar" style="height:${heightPct}%; background:${color};"></div>
-          <div class="chart-bar-label">${i === 0 ? "T" : i === 1 ? "T+1" : "+" + (i + 1)}</div>
-        </div>
-      `;
-    }).join("");
-
     this.shadowRoot.innerHTML = `
       <style>${styles}</style>
       <div class="card">
@@ -365,7 +316,6 @@ class SolarIndexCard extends HTMLElement {
             <div class="weather-icon">${getWeatherIcon(today.weather_code)}</div>
             <div class="today-details">
               ${today.temp_max != null ? `🌡 ${today.temp_max}°C` : ""}
-              ${today.radiation != null ? `  ☀ ${today.radiation} MJ/m²` : ""}
             </div>
           </div>
         </div>
@@ -373,12 +323,6 @@ class SolarIndexCard extends HTMLElement {
         <!-- 7-day strip -->
         <div class="forecast-strip">
           ${forecastDaysHtml}
-        </div>
-
-        <!-- Chart -->
-        <div class="chart-section">
-          <div class="chart-title">8-Day Forecast (kWh)</div>
-          <div class="chart">${chartBarsHtml}</div>
         </div>
 
         <!-- Training progress -->
@@ -407,18 +351,18 @@ customElements.define("solarindex-card", SolarIndexCard);
 // ---------------------------------------------------------------------------
 
 const EDITOR_SCHEMA = [
-  { name: "title",            label: "Titel",                         selector: { text: {} } },
-  { name: "entity_today",     label: "☀️ Sensor: Heute",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_tomorrow",  label: "☀️ Sensor: Morgen",             selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_day3",      label: "☀️ Sensor: Tag 3",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_day4",      label: "☀️ Sensor: Tag 4",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_day5",      label: "☀️ Sensor: Tag 5",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_day6",      label: "☀️ Sensor: Tag 6",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_day7",      label: "☀️ Sensor: Tag 7",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_day8",      label: "☀️ Sensor: Tag 8",              selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_accuracy",  label: "🧠 Sensor: Modell-Genauigkeit", selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_training",  label: "🧠 Sensor: Trainings-Einträge", selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
-  { name: "entity_condition", label: "⛅ Sensor: Wetterbedingung",    selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "title",            label: "Title",                    selector: { text: {} } },
+  { name: "entity_today",     label: "Sensor: Today",            selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_tomorrow",  label: "Sensor: Tomorrow",         selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day3",      label: "Sensor: Day 3",            selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day4",      label: "Sensor: Day 4",            selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day5",      label: "Sensor: Day 5",            selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day6",      label: "Sensor: Day 6",            selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day7",      label: "Sensor: Day 7",            selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_day8",      label: "Sensor: Day 8",            selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_accuracy",  label: "Sensor: Model Accuracy",   selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_training",  label: "Sensor: Training Count",   selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
+  { name: "entity_condition", label: "Sensor: Weather Condition", selector: { entity: { filter: { integration: "solarindex", domain: "sensor" } } } },
 ];
 
 class SolarIndexCardEditor extends HTMLElement {
