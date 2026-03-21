@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.14";
+const CARD_VERSION = "1.0.15";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -55,6 +55,16 @@ function formatDate(dateStr) {
     return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   } catch {
     return dateStr;
+  }
+}
+
+function shortWeekday(dateStr) {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString(undefined, { weekday: "short" });
+  } catch {
+    return "";
   }
 }
 
@@ -285,9 +295,9 @@ class SolarIndexCard extends HTMLElement {
     const conditionColor = CONDITION_COLORS[todayCondition] || "#6366f1";
     const conditionLabel = CONDITION_LABELS[todayCondition] || todayCondition;
 
-    const forecastDaysHtml = forecasts.slice(1).map((f, i) => `
+    const forecastDaysHtml = forecasts.slice(1).map((f) => `
       <div class="forecast-day">
-        <div class="forecast-day-label">${DAY_LABELS[i + 1].substring(0, 3)}</div>
+        <div class="forecast-day-label">${shortWeekday(f.date)}</div>
         <div class="forecast-day-icon">${getWeatherIcon(f.weather_code)}</div>
         <div class="forecast-day-kwh">${f.kwh.toFixed(1)}</div>
       </div>
