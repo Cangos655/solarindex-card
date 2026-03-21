@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.8";
+const CARD_VERSION = "1.0.9";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -377,122 +377,64 @@ class SolarIndexCard extends HTMLElement {
 customElements.define("solarindex-card", SolarIndexCard);
 
 // ---------------------------------------------------------------------------
-// Card Editor (GUI configuration)
+// Card Editor (GUI configuration) – uses native ha-form with entity pickers
 // ---------------------------------------------------------------------------
+
+const EDITOR_SCHEMA = [
+  { name: "title",            label: "Titel",                         selector: { text: {} } },
+  { name: "entity_today",     label: "☀️ Sensor: Heute",              selector: { entity: { domain: "sensor" } } },
+  { name: "entity_tomorrow",  label: "☀️ Sensor: Morgen",             selector: { entity: { domain: "sensor" } } },
+  { name: "entity_day3",      label: "☀️ Sensor: Tag 3",              selector: { entity: { domain: "sensor" } } },
+  { name: "entity_day4",      label: "☀️ Sensor: Tag 4",              selector: { entity: { domain: "sensor" } } },
+  { name: "entity_day5",      label: "☀️ Sensor: Tag 5",              selector: { entity: { domain: "sensor" } } },
+  { name: "entity_day6",      label: "☀️ Sensor: Tag 6",              selector: { entity: { domain: "sensor" } } },
+  { name: "entity_day7",      label: "☀️ Sensor: Tag 7",              selector: { entity: { domain: "sensor" } } },
+  { name: "entity_day8",      label: "☀️ Sensor: Tag 8",              selector: { entity: { domain: "sensor" } } },
+  { name: "entity_accuracy",  label: "🧠 Sensor: Modell-Genauigkeit", selector: { entity: { domain: "sensor" } } },
+  { name: "entity_training",  label: "🧠 Sensor: Trainings-Einträge", selector: { entity: { domain: "sensor" } } },
+  { name: "entity_condition", label: "⛅ Sensor: Wetterbedingung",    selector: { entity: { domain: "sensor" } } },
+];
 
 class SolarIndexCardEditor extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+    this._config = {};
+    this._hass = null;
+    this._initialized = false;
   }
 
   set hass(hass) {
     this._hass = hass;
-    this._render();
+    if (this._form) this._form.hass = hass;
   }
 
   setConfig(config) {
-    this._config = config;
-    this._render();
+    this._config = config || {};
+    if (this._form) {
+      this._form.data = this._config;
+    }
+    if (!this._initialized) this._initialize();
   }
 
-  _fire(config) {
-    this.dispatchEvent(new CustomEvent("config-changed", {
-      detail: { config },
-      bubbles: true,
-      composed: true,
-    }));
+  connectedCallback() {
+    if (!this._initialized) this._initialize();
   }
 
-  _field(id, label, cfg, placeholder) {
-    return `
-      <div class="field">
-        <label>${label}</label>
-        <input id="${id}" type="text" value="${cfg[id] || ""}" placeholder="${placeholder}" />
-      </div>`;
-  }
-
-  _render() {
-    const cfg = this._config || {};
-
-    // Build entity list from hass for datalist suggestions
-    const entityOptions = this._hass
-      ? Object.keys(this._hass.states)
-          .filter(id => id.startsWith("sensor."))
-          .sort()
-          .map(id => `<option value="${id}">`)
-          .join("")
-      : "";
-
-    const FIELDS = [
-      { id: "title",            label: "Titel",                          placeholder: "Solar Forecast" },
-      { id: "entity_today",     label: "Sensor: Heute (Today)",          placeholder: "sensor.home_solar_forecast_today" },
-      { id: "entity_tomorrow",  label: "Sensor: Morgen (Tomorrow)",      placeholder: "sensor.home_solar_forecast_tomorrow" },
-      { id: "entity_day3",      label: "Sensor: Tag 3",                  placeholder: "sensor.home_solar_forecast_day_3" },
-      { id: "entity_day4",      label: "Sensor: Tag 4",                  placeholder: "sensor.home_solar_forecast_day_4" },
-      { id: "entity_day5",      label: "Sensor: Tag 5",                  placeholder: "sensor.home_solar_forecast_day_5" },
-      { id: "entity_day6",      label: "Sensor: Tag 6",                  placeholder: "sensor.home_solar_forecast_day_6" },
-      { id: "entity_day7",      label: "Sensor: Tag 7",                  placeholder: "sensor.home_solar_forecast_day_7" },
-      { id: "entity_day8",      label: "Sensor: Tag 8",                  placeholder: "sensor.home_solar_forecast_day_8" },
-      { id: "entity_accuracy",  label: "Sensor: Modell-Genauigkeit",     placeholder: "sensor.home_solar_model_accuracy" },
-      { id: "entity_training",  label: "Sensor: Trainings-Einträge",     placeholder: "sensor.home_solar_training_entries" },
-      { id: "entity_condition", label: "Sensor: Wetterbedingung Heute",  placeholder: "sensor.home_solar_today_condition" },
-    ];
-
-    this.shadowRoot.innerHTML = `
-      <style>
-        datalist { display: none; }
-        .editor { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-        .section-title {
-          font-size: 11px; font-weight: 700; text-transform: uppercase;
-          letter-spacing: 0.08em; color: var(--primary-color);
-          margin-top: 8px; margin-bottom: 0;
-        }
-        .field label {
-          font-size: 12px; font-weight: 500;
-          color: var(--secondary-text-color); display: block; margin-bottom: 4px;
-        }
-        .field input {
-          width: 100%; box-sizing: border-box;
-          padding: 8px 10px;
-          border: 1px solid var(--divider-color, #ccc);
-          border-radius: 8px;
-          background: var(--card-background-color);
-          color: var(--primary-text-color);
-          font-size: 13px;
-        }
-        .field input:focus { outline: none; border-color: var(--primary-color); }
-      </style>
-      <datalist id="sensors">${entityOptions}</datalist>
-      <div class="editor">
-        <div class="field">
-          <label>Titel</label>
-          <input id="title" type="text" value="${cfg.title || "Solar Forecast"}" placeholder="Solar Forecast" />
-        </div>
-        <div class="section-title">☀️ Vorhersage-Sensoren</div>
-        ${FIELDS.slice(1, 9).map(f => `
-          <div class="field">
-            <label>${f.label}</label>
-            <input id="${f.id}" type="text" list="sensors" value="${cfg[f.id] || ""}" placeholder="${f.placeholder}" />
-          </div>`).join("")}
-        <div class="section-title">🧠 Modell-Sensoren</div>
-        ${FIELDS.slice(9).map(f => `
-          <div class="field">
-            <label>${f.label}</label>
-            <input id="${f.id}" type="text" list="sensors" value="${cfg[f.id] || ""}" placeholder="${f.placeholder}" />
-          </div>`).join("")}
-      </div>`;
-
-    // Attach listeners to all inputs
-    FIELDS.forEach(({ id }) => {
-      const el = this.shadowRoot.getElementById(id);
-      if (el) {
-        // Prevent HA dialog from stealing focus on click
-        el.addEventListener("mousedown", (e) => e.stopPropagation());
-        el.addEventListener("change", (e) => {
-          this._fire({ ...cfg, [id]: e.target.value.trim() || undefined });
-        });
-      }
+  _initialize() {
+    this._initialized = true;
+    this.shadowRoot.innerHTML = `<ha-form></ha-form>`;
+    this._form = this.shadowRoot.querySelector("ha-form");
+    this._form.hass = this._hass;
+    this._form.data = this._config;
+    this._form.schema = EDITOR_SCHEMA;
+    this._form.computeLabel = (s) => s.label;
+    this._form.addEventListener("value-changed", (e) => {
+      this.dispatchEvent(new CustomEvent("config-changed", {
+        detail: { config: e.detail.value },
+        bubbles: true,
+        composed: true,
+      }));
     });
   }
 }
