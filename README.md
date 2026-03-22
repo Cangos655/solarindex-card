@@ -2,28 +2,28 @@
 
 Lovelace card for the [SolarIndex](https://github.com/Cangos655/solarindex-ha) Home Assistant integration.
 
-Zeigt Solar-Ertragsprognosen, Wetterbedingungen und den ML-Trainingsfortschritt auf einen Blick.
+Displays solar yield forecasts, weather conditions, and ML training progress at a glance.
 
-## Voraussetzung
+## Requirements
 
-Die [SolarIndex Integration](https://github.com/Cangos655/solarindex-ha) muss installiert und eingerichtet sein.
+The [SolarIndex Integration](https://github.com/Cangos655/solarindex-ha) must be installed and configured.
 
 ## Installation via HACS
 
-1. In HACS → Frontend → Benutzerdefiniertes Repository hinzufügen: `https://github.com/Cangos655/solarindex-card`
-2. **SolarIndex Card** installieren
-3. Browser-Cache leeren (Strg+Shift+R)
+1. In HACS → Frontend → Add custom repository: `https://github.com/Cangos655/solarindex-card`
+2. Install **SolarIndex Card**
+3. Clear browser cache (Ctrl+Shift+R)
 
-## Verwendung
+## Usage
 
-Die Karte erkennt deine SolarIndex-Sensoren automatisch. Einfach zum Dashboard hinzufügen:
+The card auto-discovers your SolarIndex sensors. Just add it to your dashboard:
 
 ```yaml
 type: custom:solarindex-card
 title: Solar Forecast  # optional
 ```
 
-Sensoren können auch manuell angegeben werden (z. B. bei mehreren Instanzen):
+Sensors can also be configured manually (e.g. if you have multiple instances):
 
 ```yaml
 type: custom:solarindex-card
@@ -37,8 +37,8 @@ entity_training: sensor.solarindex_training_count
 entity_condition: sensor.solarindex_today_condition
 ```
 
-## Anzeige
+## Display
 
-- **Heute**: Prognostizierter Tagesertrag, Wetterbedingung, Temperatur
-- **Vorschau**: Morgen + 2 weitere Tage
-- **Training**: Kompakte Übersicht des ML-Modells (Sonnig / Wechselhaft / Bewölkt · Genauigkeit)
+- **Today**: Forecasted daily yield, weather condition, temperature
+- **Outlook**: Tomorrow + 2 more days
+- **Training**: Compact ML model overview (Sunny / Mixed / Overcast · Accuracy)
