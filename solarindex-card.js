@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.0.19";
+const CARD_VERSION = "1.1.0";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -310,37 +310,49 @@ class SolarIndexCard extends HTMLElement {
         margin-top: 2px;
       }
 
-      /* Training progress */
-      .training-section {
-        padding: 12px;
+      /* Training progress – compact single row */
+      .training-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
         background: rgba(255,255,255,0.04);
         border-radius: 10px;
-      }
-      .training-title {
-        font-size: 12px;
-        opacity: 0.7;
-        margin-bottom: 10px;
-      }
-      .training-buckets {
-        display: flex;
         gap: 8px;
       }
-      .training-bucket {
-        flex: 1;
-        text-align: center;
-        padding: 8px 4px;
-        background: rgba(255,255,255,0.04);
-        border-radius: 8px;
+      .training-label {
+        font-size: 11px;
+        opacity: 0.5;
+        white-space: nowrap;
       }
-      .bucket-icon { font-size: 16px; margin-bottom: 4px; }
-      .bucket-label { font-size: 10px; opacity: 0.5; margin-bottom: 2px; }
-      .bucket-count { font-size: 14px; font-weight: 700; }
+      .training-buckets-inline {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .training-bucket-inline {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .training-bucket-inline span:first-child { font-size: 13px; }
+      .training-accuracy {
+        font-size: 12px;
+        font-weight: 700;
+        background: rgba(99,102,241,0.15);
+        color: #818cf8;
+        border-radius: 20px;
+        padding: 2px 8px;
+        white-space: nowrap;
+      }
     `;
 
     const conditionColor = CONDITION_COLORS[todayCondition] || "#6366f1";
     const conditionLabel = CONDITION_LABELS[todayCondition] || todayCondition;
 
-    const forecastDaysHtml = forecasts.slice(1).map((f) => `
+    const forecastDaysHtml = forecasts.slice(1, 4).map((f) => `
       <div class="forecast-day">
         <div class="forecast-day-label">${shortWeekday(f.date)}</div>
         <div class="forecast-day-icon">${getWeatherIcon(f.weather_code)}</div>
@@ -381,26 +393,15 @@ class SolarIndexCard extends HTMLElement {
           ${forecastDaysHtml}
         </div>
 
-        <!-- Training progress -->
-        <div class="training-section">
-          <div class="training-title">🧠 Modell-Training · ${trainingCount}/30 Einträge · ${accuracy.toFixed(0)}%</div>
-          <div class="training-buckets">
-            <div class="training-bucket">
-              <div class="bucket-icon">☀️</div>
-              <div class="bucket-label">Sonnig</div>
-              <div class="bucket-count" style="color:#f59e0b;">${bucketSunny}/${maxPerBucket}</div>
-            </div>
-            <div class="training-bucket">
-              <div class="bucket-icon">⛅</div>
-              <div class="bucket-label">Wechselhaft</div>
-              <div class="bucket-count" style="color:#6366f1;">${bucketMixed}/${maxPerBucket}</div>
-            </div>
-            <div class="training-bucket">
-              <div class="bucket-icon">☁️</div>
-              <div class="bucket-label">Bewölkt</div>
-              <div class="bucket-count" style="color:#64748b;">${bucketOvercast}/${maxPerBucket}</div>
-            </div>
+        <!-- Training progress – compact row -->
+        <div class="training-row">
+          <span class="training-label">🧠 Training</span>
+          <div class="training-buckets-inline">
+            <div class="training-bucket-inline"><span>☀️</span><span style="color:#f59e0b;">${bucketSunny}/${maxPerBucket}</span></div>
+            <div class="training-bucket-inline"><span>⛅</span><span style="color:#6366f1;">${bucketMixed}/${maxPerBucket}</span></div>
+            <div class="training-bucket-inline"><span>☁️</span><span style="color:#64748b;">${bucketOvercast}/${maxPerBucket}</span></div>
           </div>
+          <span class="training-accuracy">${accuracy.toFixed(0)}%</span>
         </div>
       </div>
     `;
