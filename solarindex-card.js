@@ -8,7 +8,7 @@
  *   title: "My Solar Forecast"         (optional)
  */
 
-const CARD_VERSION = "1.1.0";
+const CARD_VERSION = "1.1.1";
 
 const WEATHER_ICONS = {
   0: "☀️", 1: "🌤", 2: "⛅", 3: "☁️",
@@ -352,7 +352,7 @@ class SolarIndexCard extends HTMLElement {
     const conditionColor = CONDITION_COLORS[todayCondition] || "#6366f1";
     const conditionLabel = CONDITION_LABELS[todayCondition] || todayCondition;
 
-    const forecastDaysHtml = forecasts.slice(1, 4).map((f) => `
+    const forecastDaysHtml = forecasts.slice(1, 5).map((f) => `
       <div class="forecast-day">
         <div class="forecast-day-label">${shortWeekday(f.date)}</div>
         <div class="forecast-day-icon">${getWeatherIcon(f.weather_code)}</div>
