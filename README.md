@@ -4,6 +4,8 @@ Lovelace card for the [SolarIndex](https://github.com/Cangos655/solarindex-ha) H
 
 Displays solar yield forecasts, weather conditions, and ML training progress at a glance.
 
+![SolarIndex Card Screenshot](screenshot.png)
+
 ## Requirements
 
 The [SolarIndex Integration](https://github.com/Cangos655/solarindex-ha) must be installed and configured.
