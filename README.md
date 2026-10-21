@@ -1,3 +1,5 @@
+> **⚠️ This repository is no longer maintained.** The card is now bundled with the integration **[SolarForecast](https://github.com/Cangos655/SolarForecast)**, which is available directly in HACS and registers the card automatically. Please use SolarForecast instead.
+
 # SolarIndex Card
 
 Lovelace card for the [SolarIndex](https://github.com/Cangos655/solarindex-ha) Home Assistant integration.
